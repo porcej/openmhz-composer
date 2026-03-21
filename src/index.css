@@ -416,3 +416,33 @@ label.field.realtime-scale input[type="range"] {
   margin: 0 0 0.65rem;
   font-weight: 600;
 }
+
+.merge-progress {
+  margin-top: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface2);
+  overflow: hidden;
+}
+
+.merge-progress-bar {
+  height: 6px;
+  background: linear-gradient(90deg, var(--accent-dim), var(--accent));
+  transition: width 0.2s ease-out;
+}
+
+.merge-progress-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.merge-progress-eta {
+  font-family: var(--mono);
+  color: var(--text);
+}

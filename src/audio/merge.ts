@@ -111,22 +111,55 @@ function writeWav(buffer: AudioBuffer): ArrayBuffer {
 
 export type MergeClip = { url: string };
 
+export type MergeProgress = {
+  /** 0–100 */
+  percent: number;
+  label: string;
+  /** Seconds remaining; null until the first step finishes */
+  estimatedSecondsRemaining: number | null;
+};
+
 export async function mergeUrlsToWav(
   clips: MergeClip[],
-  delayAfterMs: number[]
+  delayAfterMs: number[],
+  onProgress?: (p: MergeProgress) => void
 ): Promise<{ wav: Blob; buffer: AudioBuffer }> {
   const ctx = new AudioContext();
-  try {
-    const decoded: AudioBuffer[] = [];
-    for (const c of clips) {
-      const raw = await fetchDecode(ctx, c.url);
-      decoded.push(await resampleIfNeeded(raw));
+  const totalSteps = clips.length + 1;
+  const start = Date.now();
+
+  const emit = (label: string, completedSteps: number) => {
+    let eta: number | null = null;
+    if (completedSteps > 0 && completedSteps < totalSteps) {
+      const elapsed = Date.now() - start;
+      const avgPerStep = elapsed / completedSteps;
+      eta = Math.max(
+        0,
+        Math.ceil(((totalSteps - completedSteps) * avgPerStep) / 1000)
+      );
     }
+    onProgress?.({
+      percent: Math.min(100, Math.round((completedSteps / totalSteps) * 100)),
+      label,
+      estimatedSecondsRemaining: eta,
+    });
+  };
+
+  try {
+    emit("Starting…", 0);
+    const decoded: AudioBuffer[] = [];
+    for (let i = 0; i < clips.length; i++) {
+      const raw = await fetchDecode(ctx, clips[i].url);
+      decoded.push(await resampleIfNeeded(raw));
+      emit(`Decoded clip ${i + 1} of ${clips.length}`, i + 1);
+    }
+    emit("Merging and encoding WAV…", clips.length);
     const gapSamples = delayAfterMs.map((ms) =>
       Math.round((ms / 1000) * TARGET_SAMPLE_RATE)
     );
     const merged = mergeBuffers(ctx, decoded, gapSamples);
     const wav = new Blob([writeWav(merged)], { type: "audio/wav" });
+    emit("Complete", totalSteps);
     return { wav, buffer: merged };
   } finally {
     await ctx.close();

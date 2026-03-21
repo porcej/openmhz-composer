@@ -11,7 +11,7 @@ import {
   mergeCallsById,
   systemDisplayName,
 } from "./api/openmhz";
-import { mergeUrlsToWav } from "./audio/merge";
+import { mergeUrlsToWav, type MergeProgress } from "./audio/merge";
 import {
   deleteProject,
   listProjects,
@@ -133,6 +133,7 @@ export default function App() {
   const [realtimeErr, setRealtimeErr] = useState<string | null>(null);
   const [realtimeScale, setRealtimeScale] = useState(1);
   const [merging, setMerging] = useState(false);
+  const [mergeProgress, setMergeProgress] = useState<MergeProgress | null>(null);
   const [mergedUrl, setMergedUrl] = useState<string | null>(null);
 
   const [saved, setSaved] = useState<SavedProject[]>([]);
@@ -525,6 +526,7 @@ export default function App() {
     if (queue.length === 0) return;
     setMerging(true);
     setMergeErr(null);
+    setMergeProgress(null);
     if (mergedUrl) {
       URL.revokeObjectURL(mergedUrl);
       setMergedUrl(null);
@@ -533,13 +535,16 @@ export default function App() {
     try {
       const { wav } = await mergeUrlsToWav(
         queue.map((q) => ({ url: q.audioUrl })),
-        queue.map((q) => q.delayAfterMs)
+        queue.map((q) => q.delayAfterMs),
+        setMergeProgress
       );
       setMergedBlob(wav);
       const url = URL.createObjectURL(wav);
       setMergedUrl(url);
+      window.setTimeout(() => setMergeProgress(null), 400);
     } catch (e) {
       setMergeErr((e as Error).message);
+      setMergeProgress(null);
     } finally {
       setMerging(false);
     }
@@ -1128,6 +1133,34 @@ export default function App() {
             {merging ? "Merging…" : "Merge to single audio"}
           </button>
         </div>
+        {merging && mergeProgress && (
+          <div
+            className="merge-progress"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={mergeProgress.percent}
+            aria-label={mergeProgress.label}
+          >
+            <div
+              className="merge-progress-bar"
+              style={{ width: `${mergeProgress.percent}%` }}
+            />
+            <div className="merge-progress-meta">
+              <span>{mergeProgress.label}</span>
+              {mergeProgress.estimatedSecondsRemaining != null &&
+                mergeProgress.percent < 100 && (
+                  <span className="merge-progress-eta">
+                    ~
+                    {mergeProgress.estimatedSecondsRemaining < 60
+                      ? `${mergeProgress.estimatedSecondsRemaining}s`
+                      : `${Math.ceil(mergeProgress.estimatedSecondsRemaining / 60)} min`}{" "}
+                    left
+                  </span>
+                )}
+            </div>
+          </div>
+        )}
         {mergeErr && <p className="err">{mergeErr}</p>}
       </section>
 
