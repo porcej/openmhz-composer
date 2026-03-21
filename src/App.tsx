@@ -429,6 +429,7 @@ export default function App() {
       })),
     ]);
     setSelectedCallIds(new Set());
+    setModal(null);
   }
 
   function onUploadFiles(files: FileList | null) {
@@ -598,6 +599,12 @@ export default function App() {
           <button
             type="button"
             className="primary"
+            disabled={!shortName || selectedTg.size === 0}
+            title={
+              !shortName || selectedTg.size === 0
+                ? "Select a system and at least one channel first"
+                : undefined
+            }
             onClick={() => setModal("transmissions")}
           >
             Transmissions
@@ -743,7 +750,10 @@ export default function App() {
                           <button
                             type="button"
                             className="primary"
-                            onClick={() => void loadCalls()}
+                            onClick={() => {
+                              setModal("transmissions");
+                              void loadCalls();
+                            }}
                             disabled={
                               !shortName || selectedTg.size === 0 || callsLoading
                             }
