@@ -41,6 +41,24 @@ npm run build
 
 Static output is in `dist/` (deploy to any static host).
 
+## Deploy (Cloudflare Pages via GitHub Actions)
+
+1. Create a Cloudflare Pages project (Framework preset: **None**) and set:
+   - Build command: `npm run build`
+   - Build output directory: `dist`
+2. In GitHub repo settings, add these secrets:
+   - `CLOUDFLARE_ACCOUNT_ID`
+   - `CLOUDFLARE_API_TOKEN` (token needs **Cloudflare Pages:Edit** for your account)
+3. In GitHub repo settings, add variable:
+   - `CLOUDFLARE_PAGES_PROJECT` (exact Pages project name)
+4. Push to `main` (or run the workflow manually from Actions). The workflow at
+   `.github/workflows/deploy-cloudflare-pages.yml` builds and deploys `dist/`.
+
+Notes:
+- SPA fallback routing is handled by `public/_redirects` (`/* /index.html 200`).
+- If you also configure Pages direct Git integration, disable one deploy path to
+  avoid duplicate builds/deploys.
+
 ## Docker
 
 Build and run the production bundle with nginx:
