@@ -55,7 +55,10 @@ Static output is in `dist/` (deploy to any static host).
    `.github/workflows/deploy-cloudflare-pages.yml` builds and deploys `dist/`.
 
 Notes:
-- SPA fallback routing is handled by `public/_redirects` (`/* /index.html 200`).
+- This app currently does not use client-side path routing (no React Router),
+  so no `_redirects` fallback file is required for Cloudflare Pages deploys.
+  If you later add path-based SPA routes, add Cloudflare-compatible fallback
+  rules at that time.
 - If you also configure Pages direct Git integration, disable one deploy path to
   avoid duplicate builds/deploys.
 
